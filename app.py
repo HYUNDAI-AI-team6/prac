@@ -126,6 +126,7 @@ found_id = search("해외 매출 증감 알려줘")
 print("🔎 검색은 '요약'으로 → id:", found_id[:8])
 print("📦 LLM엔 '원본' 전달:\n", docstore[found_id])
 
+
 # 셀 9번
 def validate_table(rows):                              # [함수 정의] 표(2차원 리스트)를 받아 빈 칸이 있는지 검사
     bad = [                                            # 문제가 있는 칸의 위치를 모을 리스트 (리스트 컴프리헨션)
@@ -143,3 +144,32 @@ def validate_table(rows):                              # [함수 정의] 표(2�
 print(validate_table(extracted_table))                 # 정상 표: 셀 4 에서 뽑은 실제 표를 검사 → 빈 칸 없음
 print(validate_table([["연도", None, None],             # 병합 흉내 표: 머리글 행의 2·3번째 칸이 None (병합 셀이 추출되면 이렇게 비는 경우가 많음)
                        ["2026", "120억", "+8%"]]))      #   → 결과: [(0, 1), (0, 2)] = 0행 1열, 0행 2열이 비어 있다고 알려 줌
+
+#셀 10
+# 4단계까지 만든 sample_report.pdf 를 '이미지'로 캡처
+import os
+
+PDF = "/content/sample_report.pdf" if os.path.exists("/content/sample_report.pdf") \
+      else "sample_report.pdf"
+DPI = 300   # 300dpi = 표의 작은 숫자도 또렷하게 (소득세법서 검증된 값)
+
+try:
+    # 1순위: pdfplumber — 내부에서 PIL.ImageDraw 를 거칩니다
+    import pdfplumber
+    with pdfplumber.open(PDF) as pdf:
+        pdf.pages[0].to_image(resolution=DPI).save("page_image.png")
+    print("캡처 방식: pdfplumber")
+
+except ImportError as e:
+    # Pillow가 섞여 설치된 환경이면 위에서 '_Ink' ImportError 가 납니다.
+    # pypdfium2(=pdfplumber의 필수 의존성)로 직접 렌더하면 ImageDraw를
+    # 거치지 않으므로, 재설치·세션 재시작 없이 그대로 진행할 수 있습니다.
+    import pypdfium2 as pdfium
+    doc = pdfium.PdfDocument(PDF)
+    doc[0].render(scale=DPI / 72).to_pil().save("page_image.png")
+    print(f"캡처 방식: pypdfium2 (pdfplumber 우회 — {e})")
+
+from PIL import Image
+img = Image.open("page_image.png")
+print(f"✅ PDF 1페이지를 이미지로 캡처: {img.size} px")
+img
