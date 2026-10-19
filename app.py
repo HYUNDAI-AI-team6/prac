@@ -61,6 +61,8 @@ raw_text = reader.pages[0].extract_text()             # pages[0] = 첫 페이지
 print("───── 단순 추출 결과 ─────")                   # 구분용 제목 출력
 print(raw_text)    
 
+
+        
 # 셀4번
 import pdfplumber
 
@@ -82,6 +84,28 @@ caption = "[표 1] 2026년 1분기 부문별 매출 현황"
 table_chunk = caption + "\n" + table_to_markdown(extracted_table)
 print(table_chunk)
 
+#셀 6번
+big_table = [
+    ["구분","매출","증감"],
+    ["국내", "120억", "+8%"], ["해외", "85억", "-3%"],   # 데이터 행들
+    ["온라인", "47억", "+15%"], ["오프라인", "73억", "-1%"],
+    ["B2B", "210억", "+22%"], ["B2C", "88억", "+5%"],
+]
+
+header, row = big_table[0], ig_table[1:]         
+
+chunk_size = 2                                      
+chunks = []                                        
+
+for i in range(0, len(rows), chunk_size):            
+    block = rows[i:i + chunk_size]                  
+    chunk = [header] + block                    
+                                                     
+    chunks.append(table_to_markdown(chunk))         
+
+for n, chunk in enumerate(chunks, 1):               
+    print(f"───── 조각 {n} ─────")                    
+    print(chunk, "\n")                        
 # 셀 7
 import uuid
 
