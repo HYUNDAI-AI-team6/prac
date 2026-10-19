@@ -126,6 +126,29 @@ found_id = search("해외 매출 증감 알려줘")
 print("🔎 검색은 '요약'으로 → id:", found_id[:8])
 print("📦 LLM엔 '원본' 전달:\n", docstore[found_id])
 
+def answer_from_plain(query):
+    # 단순 추출본(1차원 텍스트)에서 질문 단어 주변을 긁어옴
+    key = query.split()[0]
+    flat = " ".join(raw_text.split())
+    idx = flat.find(key)
+    return flat[idx:idx + 30] + " ..." if idx >= 0 else "(못 찾음)"
+
+def answer_from_struct(query):
+    # 구조 보존본(2차원 표)에서 해당 '행'을 정확히 찾음
+    key = query.split()[0]
+    head = extracted_table[0]
+    for row in extracted_table[1:]:
+        if key in row[0]:
+            return " / ".join(f"{h}: {v}" for h, v in zip(head, row))
+    return "(못 찾음)"
+
+q = "해외 매출 증감"
+print(f"🧑 질문: {q}\n")
+print("─── 단순 추출 답 ───")
+print(answer_from_plain(q))
+print("\n─── 구조 보존 답 ───")
+print(answer_from_struct(q))
+
 # 셀 9번
 def validate_table(rows):                              # [함수 정의] 표(2차원 리스트)를 받아 빈 칸이 있는지 검사
     bad = [                                            # 문제가 있는 칸의 위치를 모을 리스트 (리스트 컴프리헨션)
