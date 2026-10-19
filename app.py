@@ -143,3 +143,100 @@ def validate_table(rows):                              # [함수 정의] 표(2�
 print(validate_table(extracted_table))                 # 정상 표: 셀 4 에서 뽑은 실제 표를 검사 → 빈 칸 없음
 print(validate_table([["연도", None, None],             # 병합 흉내 표: 머리글 행의 2·3번째 칸이 None (병합 셀이 추출되면 이렇게 비는 경우가 많음)
                        ["2026", "120억", "+8%"]]))      #   → 결과: [(0, 1), (0, 2)] = 0행 1열, 0행 2열이 비어 있다고 알려 줌
+
+#셀 10
+# 4단계까지 만든 sample_report.pdf 를 '이미지'로 캡처
+import os
+
+PDF = "/content/sample_report.pdf" if os.path.exists("/content/sample_report.pdf") \
+      else "sample_report.pdf"
+DPI = 300   # 300dpi = 표의 작은 숫자도 또렷하게 (소득세법서 검증된 값)
+
+try:
+    # 1순위: pdfplumber — 내부에서 PIL.ImageDraw 를 거칩니다
+    import pdfplumber
+    with pdfplumber.open(PDF) as pdf:
+        pdf.pages[0].to_image(resolution=DPI).save("page_image.png")
+    print("캡처 방식: pdfplumber")
+
+except ImportError as e:
+    # Pillow가 섞여 설치된 환경이면 위에서 '_Ink' ImportError 가 납니다.
+    # pypdfium2(=pdfplumber의 필수 의존성)로 직접 렌더하면 ImageDraw를
+    # 거치지 않으므로, 재설치·세션 재시작 없이 그대로 진행할 수 있습니다.
+    import pypdfium2 as pdfium
+    doc = pdfium.PdfDocument(PDF)
+    doc[0].render(scale=DPI / 72).to_pil().save("page_image.png")
+    print(f"캡처 방식: pypdfium2 (pdfplumber 우회 — {e})")
+
+from PIL import Image
+img = Image.open("page_image.png")
+print(f"✅ PDF 1페이지를 이미지로 캡처: {img.size} px")
+img
+
+#셀 11
+
+import os, base64
+# OpenAI 키 (Colab 비밀키 또는 환경변수)
+try:
+    from google.colab import userdata
+    os.environ["OPENAI_API_KEY"] = userdata.get("OPENAI_API_KEY")
+except Exception:
+    pass  # 이미 환경변수에 있으면 그대로 사용
+
+from langchain_openai import ChatOpenAI
+from langchain_core.messages import HumanMessage
+
+with open("page_image.png", "rb") as f:
+    img_b64 = base64.b64encode(f.read()).decode()
+
+# 비전 가능 모델 (mini 아님 — 표 정확도 위해 gpt-4o)
+vision = ChatOpenAI(model="gpt-4o", temperature=0)
+
+# 프롬프트 핵심: '분석/요약'이 아니라 '전사(OCR)'
+ocr_msg = HumanMessage(content=[
+    {"type": "text", "text":
+     "다음 이미지에 표가 있습니다. OCR 작업입니다: 표의 "
+     "각 행과 열에 적힌 글자·숫자를 보이는 그대로 마크다운 "
+     "표로 옮기세요. 해석·요약하지 말고 그대로 전사만 하세요."},
+    {"type": "image_url",
+     "image_url": {"url": f"data:image/png;base64,{img_b64}",
+                   "detail": "high"}},
+])
+resp = vision.invoke([ocr_msg]).content
+
+vision_table = resp
+print("─── 비전 복원 결과 ───")
+print(vision_table)
+if "sorry" in vision_table.lower() or "can't" in vision_table.lower():
+    print("\n⚠️ 비전 복원 실패. 셀 재실행 또는 키 권한 확인.")
+else:
+    print("\n✅ 이미지 표 → 텍스트 복원 성공")
+
+#셀 12번
+print("=" * 55)                                       
+print("① 단순 텍스트 추출 (pypdf)")                   
+print("=" * 55)                                       
+import pypdf                                           
+r = pypdf.PdfReader("sample_report.pdf")               
+plain = (r.pages[0].extract_text() or "").strip()     
+print(plain if plain else "(추출 0글자 — 이미지 PDF였다면 이렇게 빈손)") 
+
+print("\n" + "=" * 55)                                  
+print("② 멀티모달 (페이지 → 이미지 → 비전 OCR)")           
+print("=" * 55)                                     
+print(vision_table)                                    
+
+print("\n" + "=" * 55)                             
+print("""
+👀 핵심 정리
+┌────────────────┬──────────────────────────────┐
+│ 방식           │ 이미지로 박힌 표일 때        │
+├────────────────┼──────────────────────────────┤
+│ 텍스트 추출    │ 0글자 — 아예 못 읽음 ❌      │
+│ 멀티모달(비전) │ 표를 텍스트로 복원 ✅        │
+└────────────────┴──────────────────────────────┘
+교훈: 텍스트 추출이 실패하는 PDF(스캔·그림표·도표)는
+멀티모달이 유일한 길. 단, 비전도 100%는 아니니
+복원 결과를 원본과 대조하는 검수가 필수 (4단계 셀 9).
+""")
+=======
