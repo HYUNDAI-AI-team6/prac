@@ -174,6 +174,43 @@ img = Image.open("page_image.png")
 print(f"✅ PDF 1페이지를 이미지로 캡처: {img.size} px")
 img
 
+import os, base64
+# OpenAI 키 (Colab 비밀키 또는 환경변수)
+try:
+    from google.colab import userdata
+    os.environ["OPENAI_API_KEY"] = userdata.get("OPENAI_API_KEY")
+except Exception:
+    pass  # 이미 환경변수에 있으면 그대로 사용
+
+from langchain_openai import ChatOpenAI
+from langchain_core.messages import HumanMessage
+
+with open("page_image.png", "rb") as f:
+    img_b64 = base64.b64encode(f.read()).decode()
+
+# 비전 가능 모델 (mini 아님 — 표 정확도 위해 gpt-4o)
+vision = ChatOpenAI(model="gpt-4o", temperature=0)
+
+# 프롬프트 핵심: '분석/요약'이 아니라 '전사(OCR)'
+ocr_msg = HumanMessage(content=[
+    {"type": "text", "text":
+     "다음 이미지에 표가 있습니다. OCR 작업입니다: 표의 "
+     "각 행과 열에 적힌 글자·숫자를 보이는 그대로 마크다운 "
+     "표로 옮기세요. 해석·요약하지 말고 그대로 전사만 하세요."},
+    {"type": "image_url",
+     "image_url": {"url": f"data:image/png;base64,{img_b64}",
+                   "detail": "high"}},
+])
+resp = vision.invoke([ocr_msg]).content
+
+vision_table = resp
+print("─── 비전 복원 결과 ───")
+print(vision_table)
+if "sorry" in vision_table.lower() or "can't" in vision_table.lower():
+    print("\n⚠️ 비전 복원 실패. 셀 재실행 또는 키 권한 확인.")
+else:
+    print("\n✅ 이미지 표 → 텍스트 복원 성공")
+
 #셀 12번
 print("=" * 55)                                       
 print("① 단순 텍스트 추출 (pypdf)")                   
