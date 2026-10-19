@@ -145,3 +145,21 @@ def answer_from_struct(query):
 q= "해외 매출 증감"
 print(f"질문: {q}\n")
 print("---단순 추출 답---")
+
+# 셀 9번
+def validate_table(rows):                              # [함수 정의] 표(2차원 리스트)를 받아 빈 칸이 있는지 검사
+    bad = [                                            # 문제가 있는 칸의 위치를 모을 리스트 (리스트 컴프리헨션)
+        (r, c)                                         #   문제 칸의 (행 번호, 열 번호) 를 저장
+        for r, row in enumerate(rows)                  #   바깥 반복: 행을 꺼내며 행 번호 r 을 같이 받음 (0부터)
+        for c, cell in enumerate(row)                  #   안쪽 반복: 그 행의 칸을 꺼내며 열 번호 c 를 같이 받음 (0부터)
+        if cell in (None, "")                          #   칸 값이 None 이거나 빈 문자열이면 → 병합 셀이 깨졌을 가능성
+    ]
+    return (                                           # 결과 문구 반환
+        "⚠️ 빈/병합 의심 셀: " + str(bad)               #   bad 에 하나라도 있으면(비어 있지 않은 리스트는 True) 위치 목록과 함께 경고
+        if bad                                         #   (문제 칸이 있는 경우)
+        else "✅ 이상 없음"                              #   없으면 정상 문구
+    )
+
+print(validate_table(extracted_table))                 # 정상 표: 셀 4 에서 뽑은 실제 표를 검사 → 빈 칸 없음
+print(validate_table([["연도", None, None],             # 병합 흉내 표: 머리글 행의 2·3번째 칸이 None (병합 셀이 추출되면 이렇게 비는 경우가 많음)
+                       ["2026", "120억", "+8%"]]))      #   → 결과: [(0, 1), (0, 2)] = 0행 1열, 0행 2열이 비어 있다고 알려 줌
