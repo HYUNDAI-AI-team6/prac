@@ -81,3 +81,23 @@ def table_to_markdown(rows):
 caption = "[표 1] 2026년 1분기 부문별 매출 현황"
 table_chunk = caption + "\n" + table_to_markdown(extracted_table)
 print(table_chunk)
+
+# 셀 7
+import uuid
+
+table_original = table_chunk                                       # 답변용
+table_summary = "2026년 1분기 부문별 매출과 증감률 표. 국내 해외 온라인 매출 실적"  # 검색용
+
+doc_id = str(uuid.uuid4())
+docstore     = {doc_id: table_original}   # 답변용 저장소
+search_index = {doc_id: table_summary}    # 검색용 저장소
+
+def search(query):
+    for _id, summary in search_index.items():
+        if any(word in summary for word in query.split()):
+            return _id
+    return None
+
+found_id = search("해외 매출 증감 알려줘")
+print("🔎 검색은 '요약'으로 → id:", found_id[:8])
+print("📦 LLM엔 '원본' 전달:\n", docstore[found_id])
