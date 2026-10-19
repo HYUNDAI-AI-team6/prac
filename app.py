@@ -126,7 +126,6 @@ found_id = search("해외 매출 증감 알려줘")
 print("🔎 검색은 '요약'으로 → id:", found_id[:8])
 print("📦 LLM엔 '원본' 전달:\n", docstore[found_id])
 
-
 # 셀 9번
 def validate_table(rows):                              # [함수 정의] 표(2차원 리스트)를 받아 빈 칸이 있는지 검사
     bad = [                                            # 문제가 있는 칸의 위치를 모을 리스트 (리스트 컴프리헨션)
@@ -173,6 +172,8 @@ from PIL import Image
 img = Image.open("page_image.png")
 print(f"✅ PDF 1페이지를 이미지로 캡처: {img.size} px")
 img
+
+#셀 11
 
 import os, base64
 # OpenAI 키 (Colab 비밀키 또는 환경변수)
@@ -238,3 +239,4 @@ print("""
 멀티모달이 유일한 길. 단, 비전도 100%는 아니니
 복원 결과를 원본과 대조하는 검수가 필수 (4단계 셀 9).
 """)
+=======
