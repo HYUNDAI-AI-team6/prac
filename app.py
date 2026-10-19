@@ -59,7 +59,14 @@ reader = pypdf.PdfReader("sample_report.pdf")         # PDF 파일을 열어 읽
 raw_text = reader.pages[0].extract_text()             # pages[0] = 첫 페이지 / extract_text() = 그 페이지 글자를 문자열 하나로 추출
                                                       #   → 셀 8 에서 '단순 추출본'으로 다시 쓰려고 변수에 저장
 print("───── 단순 추출 결과 ─────")                   # 구분용 제목 출력
+print(raw_text)    
 
-print(raw_text) 
+# 셀4번
+import pdfplumber
 
+with pdfplumber.open("sample_report.pdf") as pdf:
+    extracted_table = pdf.pages[0].extract_tables()[0]   # 2차원 리스트
+
+for row in extracted_table:
+    print(row)
 
