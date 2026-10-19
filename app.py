@@ -173,3 +173,31 @@ from PIL import Image
 img = Image.open("page_image.png")
 print(f"✅ PDF 1페이지를 이미지로 캡처: {img.size} px")
 img
+
+#셀 12번
+print("=" * 55)                                       
+print("① 단순 텍스트 추출 (pypdf)")                   
+print("=" * 55)                                       
+import pypdf                                           
+r = pypdf.PdfReader("sample_report.pdf")               
+plain = (r.pages[0].extract_text() or "").strip()     
+print(plain if plain else "(추출 0글자 — 이미지 PDF였다면 이렇게 빈손)") 
+
+print("\n" + "=" * 55)                                  
+print("② 멀티모달 (페이지 → 이미지 → 비전 OCR)")           
+print("=" * 55)                                     
+print(vision_table)                                    
+
+print("\n" + "=" * 55)                             
+print("""
+👀 핵심 정리
+┌────────────────┬──────────────────────────────┐
+│ 방식           │ 이미지로 박힌 표일 때        │
+├────────────────┼──────────────────────────────┤
+│ 텍스트 추출    │ 0글자 — 아예 못 읽음 ❌      │
+│ 멀티모달(비전) │ 표를 텍스트로 복원 ✅        │
+└────────────────┴──────────────────────────────┘
+교훈: 텍스트 추출이 실패하는 PDF(스캔·그림표·도표)는
+멀티모달이 유일한 길. 단, 비전도 100%는 아니니
+복원 결과를 원본과 대조하는 검수가 필수 (4단계 셀 9).
+""")
