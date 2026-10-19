@@ -63,3 +63,14 @@ print("───── 단순 추출 결과 ─────")                   
 print(raw_text) 
 
 
+# 셀 5
+
+def table_to_markdown(rows):
+    header = "| " + " | ".join(rows[0]) + " |"
+    divider = "| " + " | ".join(["---"] * len(rows[0])) + " |"
+    body = ["| " + " | ".join(r) + " |" for r in rows[1:]]
+    return "\n".join([header, divider] + body)
+
+caption = "[표 1] 2026년 1분기 부문별 매출 현황"
+table_chunk = caption + "\n" + table_to_markdown(extracted_table)
+print(table_chunk)
