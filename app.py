@@ -81,3 +81,23 @@ def table_to_markdown(rows):
 caption = "[표 1] 2026년 1분기 부문별 매출 현황"
 table_chunk = caption + "\n" + table_to_markdown(extracted_table)
 print(table_chunk)
+
+# 셀 8
+
+def answer_from_plain(query):
+    key = query.split()[0]
+    flat = " ".join(raw_text.split())
+    idx = flat.find(key)
+    return flat[idx:idx + 30] + " ..." if idx >= 0 else "(못 찾음)"
+
+def answer_from_struct(query):
+    key = query.split()[0]
+    head = extracted_table[0]
+    for row in extracted_table[1:]:
+        if key in row[0]:
+            return " / ".join(f"{h}: {v}" for h, v in zip(head, row))
+    return "(못 찾음)"
+
+q= "해외 매출 증감"
+print(f"질문: {q}\n")
+print("---단순 추출 답---")
