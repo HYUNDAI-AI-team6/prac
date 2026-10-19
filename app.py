@@ -126,7 +126,6 @@ found_id = search("해외 매출 증감 알려줘")
 print("🔎 검색은 '요약'으로 → id:", found_id[:8])
 print("📦 LLM엔 '원본' 전달:\n", docstore[found_id])
 
-
 # 셀 9번
 def validate_table(rows):                              # [함수 정의] 표(2차원 리스트)를 받아 빈 칸이 있는지 검사
     bad = [                                            # 문제가 있는 칸의 위치를 모을 리스트 (리스트 컴프리헨션)
@@ -144,60 +143,3 @@ def validate_table(rows):                              # [함수 정의] 표(2�
 print(validate_table(extracted_table))                 # 정상 표: 셀 4 에서 뽑은 실제 표를 검사 → 빈 칸 없음
 print(validate_table([["연도", None, None],             # 병합 흉내 표: 머리글 행의 2·3번째 칸이 None (병합 셀이 추출되면 이렇게 비는 경우가 많음)
                        ["2026", "120억", "+8%"]]))      #   → 결과: [(0, 1), (0, 2)] = 0행 1열, 0행 2열이 비어 있다고 알려 줌
-
-#셀 10
-# 4단계까지 만든 sample_report.pdf 를 '이미지'로 캡처
-import os
-
-PDF = "/content/sample_report.pdf" if os.path.exists("/content/sample_report.pdf") \
-      else "sample_report.pdf"
-DPI = 300   # 300dpi = 표의 작은 숫자도 또렷하게 (소득세법서 검증된 값)
-
-try:
-    # 1순위: pdfplumber — 내부에서 PIL.ImageDraw 를 거칩니다
-    import pdfplumber
-    with pdfplumber.open(PDF) as pdf:
-        pdf.pages[0].to_image(resolution=DPI).save("page_image.png")
-    print("캡처 방식: pdfplumber")
-
-except ImportError as e:
-    # Pillow가 섞여 설치된 환경이면 위에서 '_Ink' ImportError 가 납니다.
-    # pypdfium2(=pdfplumber의 필수 의존성)로 직접 렌더하면 ImageDraw를
-    # 거치지 않으므로, 재설치·세션 재시작 없이 그대로 진행할 수 있습니다.
-    import pypdfium2 as pdfium
-    doc = pdfium.PdfDocument(PDF)
-    doc[0].render(scale=DPI / 72).to_pil().save("page_image.png")
-    print(f"캡처 방식: pypdfium2 (pdfplumber 우회 — {e})")
-
-from PIL import Image
-img = Image.open("page_image.png")
-print(f"✅ PDF 1페이지를 이미지로 캡처: {img.size} px")
-img
-
-#셀 12번
-print("=" * 55)                                       
-print("① 단순 텍스트 추출 (pypdf)")                   
-print("=" * 55)                                       
-import pypdf                                           
-r = pypdf.PdfReader("sample_report.pdf")               
-plain = (r.pages[0].extract_text() or "").strip()     
-print(plain if plain else "(추출 0글자 — 이미지 PDF였다면 이렇게 빈손)") 
-
-print("\n" + "=" * 55)                                  
-print("② 멀티모달 (페이지 → 이미지 → 비전 OCR)")           
-print("=" * 55)                                     
-print(vision_table)                                    
-
-print("\n" + "=" * 55)                             
-print("""
-👀 핵심 정리
-┌────────────────┬──────────────────────────────┐
-│ 방식           │ 이미지로 박힌 표일 때        │
-├────────────────┼──────────────────────────────┤
-│ 텍스트 추출    │ 0글자 — 아예 못 읽음 ❌      │
-│ 멀티모달(비전) │ 표를 텍스트로 복원 ✅        │
-└────────────────┴──────────────────────────────┘
-교훈: 텍스트 추출이 실패하는 PDF(스캔·그림표·도표)는
-멀티모달이 유일한 길. 단, 비전도 100%는 아니니
-복원 결과를 원본과 대조하는 검수가 필수 (4단계 셀 9).
-""")
