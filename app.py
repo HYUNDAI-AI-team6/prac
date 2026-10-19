@@ -125,3 +125,32 @@ def search(query):
 found_id = search("해외 매출 증감 알려줘")
 print("🔎 검색은 '요약'으로 → id:", found_id[:8])
 print("📦 LLM엔 '원본' 전달:\n", docstore[found_id])
+
+#셀 10
+# 4단계까지 만든 sample_report.pdf 를 '이미지'로 캡처
+import os
+
+PDF = "/content/sample_report.pdf" if os.path.exists("/content/sample_report.pdf") \
+      else "sample_report.pdf"
+DPI = 300   # 300dpi = 표의 작은 숫자도 또렷하게 (소득세법서 검증된 값)
+
+try:
+    # 1순위: pdfplumber — 내부에서 PIL.ImageDraw 를 거칩니다
+    import pdfplumber
+    with pdfplumber.open(PDF) as pdf:
+        pdf.pages[0].to_image(resolution=DPI).save("page_image.png")
+    print("캡처 방식: pdfplumber")
+
+except ImportError as e:
+    # Pillow가 섞여 설치된 환경이면 위에서 '_Ink' ImportError 가 납니다.
+    # pypdfium2(=pdfplumber의 필수 의존성)로 직접 렌더하면 ImageDraw를
+    # 거치지 않으므로, 재설치·세션 재시작 없이 그대로 진행할 수 있습니다.
+    import pypdfium2 as pdfium
+    doc = pdfium.PdfDocument(PDF)
+    doc[0].render(scale=DPI / 72).to_pil().save("page_image.png")
+    print(f"캡처 방식: pypdfium2 (pdfplumber 우회 — {e})")
+
+from PIL import Image
+img = Image.open("page_image.png")
+print(f"✅ PDF 1페이지를 이미지로 캡처: {img.size} px")
+img
